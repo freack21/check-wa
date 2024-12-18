@@ -1,0 +1,23 @@
+{
+  "name": "check-wa",
+  "version": "1.0.0",
+  "description": "Check active number on WhatsApp",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index"
+  },
+  "keywords": [
+    "auto",
+    "wa",
+    "whatsapp",
+    "wwebjs"
+  ],
+  "author": "Fikri Rivandi",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "github:MobCode100/whatsapp-web.js"
+  }
+}
