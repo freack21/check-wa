@@ -1,6 +1,5 @@
-const number = "628xxx";
-let executableChromePath =
-  "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const myNumber = "628xxx";
+let executableChromePath = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 // executableChromePath = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
 // executableChromePath = "/usr/bin/google-chrome-stable";
 
@@ -28,7 +27,7 @@ const client = new Client({
     executablePath: executableChromePath,
   },
   pairWithPhoneNumber: {
-    phoneNumber: number,
+    phoneNumber: myNumber,
     showNotification: true,
   },
 });
@@ -41,7 +40,7 @@ client.on("qr", (qr) => {
 });
 
 client.on("code", (code) => {
-  console.log("Linking code:", code);
+  log("Linking code:", code);
 });
 
 client.on("ready", () => {
