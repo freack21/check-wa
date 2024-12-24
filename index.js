@@ -1,9 +1,9 @@
-const myNumber = "628xxx";
+const myNumbers = ["6282286230830", "6285833110832"];
 let executableChromePath = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 // executableChromePath = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
 // executableChromePath = "/usr/bin/google-chrome-stable";
 
-const { Client, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth, NoAuth } = require("whatsapp-web.js");
 const { log } = require("console");
 const qrcode = require("qrcode-terminal");
 const express = require("express");
@@ -17,48 +17,69 @@ app.use(
   })
 );
 
-const client = new Client({
-  authStrategy: new LocalAuth({
-    dataPath: "caches",
-  }),
-  puppeteer: {
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: true,
-    executablePath: executableChromePath,
-  },
-  pairWithPhoneNumber: {
-    phoneNumber: myNumber,
-    showNotification: true,
-  },
+let isReady = [];
+
+const clients = myNumbers.map((myNumber, myIndex) => {
+  const client = new Client({
+    authStrategy: new LocalAuth({
+      clientId: `client${myIndex}`,
+    }),
+    puppeteer: {
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      headless: true,
+      executablePath: executableChromePath,
+    },
+    pairWithPhoneNumber: {
+      phoneNumber: myNumber,
+      showNotification: true,
+    },
+  });
+
+  isReady[myIndex] = false;
+
+  client.on("qr", (qr) => {
+    log(`QR for "${myNumber}" received`);
+    qrcode.generate(qr, { small: true });
+  });
+
+  client.on("code", (code) => {
+    log(`Pairing code for "${myNumber}":`, code);
+  });
+
+  client.on("ready", () => {
+    log(`Client "${myNumber}" is ready!`);
+    isReady[myIndex] = true;
+  });
+
+  client.on("disconnected", () => {
+    log(`Client "${myNumber}" is disconnected!`);
+    isReady[myIndex] = false;
+  });
+
+  client.on("auth_failure", () => {
+    log(`Client "${myNumber}" auth failed!`);
+    isReady[myIndex] = false;
+  });
+
+  client.initialize();
+
+  return client;
 });
 
-let isReady = false;
-
-client.on("qr", (qr) => {
-  log("QR RECEIVED");
-  qrcode.generate(qr, { small: true });
-});
-
-client.on("code", (code) => {
-  log("Linking code:", code);
-});
-
-client.on("ready", () => {
-  log("Client is ready!");
-  isReady = true;
-});
-
-client.on("disconnected", () => {
-  log("Client is disconnected!");
-  isReady = false;
-});
-
-client.on("auth_failure", () => {
-  log("Client auth failed!");
-  isReady = false;
-});
-
-client.initialize();
+const readyClient = () => {
+  for (let i = 0; i < isReady.length; i++) {
+    if (isReady[i]) {
+      return {
+        isReady: true,
+        client: clients[i],
+      };
+    }
+  }
+  return {
+    isReady: false,
+    client: null,
+  };
+};
 
 const numberFormatter = function (number) {
   if (!number) return "";
@@ -80,6 +101,8 @@ const numberFormatter = function (number) {
 };
 
 const checks = async function (id) {
+  const { isReady, client } = readyClient();
+
   let result = {
     code: 500,
     data: id,
@@ -110,9 +133,72 @@ app.all("/", async (req, res) => {
 
 app.all("/check", async (req, res) => {
   const id = req.query.id || req.body.id || req.headers.id;
+  if (!id) {
+    return res
+      .json({
+        msg: "please include id in query or body",
+        success: false,
+        code: 400,
+      })
+      .end();
+  }
   const registered = await checks(id);
 
   res.json(registered).end();
+});
+
+app.all("/login", async (req, res) => {
+  const id = req.query.id || req.body.id || req.headers.id;
+  if (!id) {
+    return res
+      .json({
+        msg: "please include id in query or body",
+        success: false,
+        code: 400,
+      })
+      .end();
+  }
+  const registered = await checks(id);
+
+  if (registered.status) {
+    try {
+      const myNumber = numberFormatter(id).split("@")[0];
+      const client = new Client({
+        authStrategy: new NoAuth(),
+        puppeteer: {
+          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+          headless: true,
+          executablePath: executableChromePath,
+        },
+        pairWithPhoneNumber: {
+          phoneNumber: myNumber,
+          showNotification: true,
+        },
+      });
+
+      await client.initialize();
+      await client.destroy();
+
+      res
+        .json({
+          msg: "success send pair code!",
+          success: true,
+          code: 200,
+        })
+        .end();
+    } catch (error) {
+      res
+        .json({
+          msg: "error send pair code!",
+          success: false,
+          error,
+          code: 500,
+        })
+        .end();
+    }
+  } else {
+    res.json(registered).end();
+  }
 });
 
 app.use(async (req, res) => {

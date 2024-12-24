@@ -1,4 +1,5 @@
 node_modules/
 .wwebjs_cache/
-caches/
+.wwebjs_auth
 .prettierrc
+check-number-wa.zip
