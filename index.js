@@ -1,14 +1,33 @@
-const myNumbers = ["6282286230830", "6285833110832"];
-let executableChromePath = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-// executableChromePath = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
-// executableChromePath = "/usr/bin/google-chrome-stable";
+let executableChromePath = null;
+const executableChromePaths = [
+  "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+  "/usr/bin/google-chrome-stable",
+];
 
+const fs = require("fs");
+const ENV = require("./env.json");
 const { Client, LocalAuth, NoAuth } = require("whatsapp-web.js");
 const { log } = require("console");
 const qrcode = require("qrcode-terminal");
 const express = require("express");
 const app = express();
-const PORT = 4067;
+
+const PORT = ENV.port || 4067;
+const myNumbers = ENV.client_numbers;
+
+if (!executableChromePath) {
+  if (ENV.executable_path) {
+    executableChromePath = ENV.executable_path;
+  } else {
+    for (const path of executableChromePaths) {
+      if (fs.existsSync(path)) {
+        executableChromePath = path;
+        break;
+      }
+    }
+  }
+}
 
 app.use(express.json());
 app.use(
