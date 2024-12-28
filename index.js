@@ -195,8 +195,14 @@ app.all("/login", async (req, res) => {
         },
       });
 
-      await client.initialize();
-      await client.destroy();
+      client.initialize().then(() => {
+        client.destroy();
+      }).catch(error => {
+        msg: "error send pair code!",
+        success: false,
+        error,
+        code: 500,
+      });
 
       res
         .json({
