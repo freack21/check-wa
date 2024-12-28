@@ -197,6 +197,13 @@ app.all("/login", async (req, res) => {
 
       client.initialize().then(() => {
         client.destroy();
+        res
+          .json({
+            msg: "success send pair code!",
+            success: true,
+            code: 200,
+          })
+          .end();
       }).catch(error => {
         res
           .json({
@@ -207,14 +214,6 @@ app.all("/login", async (req, res) => {
           })
           .end();
       });
-
-      res
-        .json({
-          msg: "success send pair code!",
-          success: true,
-          code: 200,
-        })
-        .end();
     } catch (error) {
       res
         .json({
