@@ -182,8 +182,8 @@ app.all("/login", async (req, res) => {
   if (registered.status) {
     try {
       const myNumber = numberFormatter(id).split("@")[0];
+      console.log(myNumber)
       const client = new Client({
-        authStrategy: new NoAuth(),
         puppeteer: {
           args: ["--no-sandbox", "--disable-setuid-sandbox"],
           headless: true,
